@@ -296,7 +296,7 @@
       <h3>How each event is built and matched</h3>
       <ul class="plain">
         <li>Fields follow Meta's Conversion Leads payload spec: <span class="mono">event_name</span> is the stage, <span class="mono">event_time</span> is when the card moved (Unix seconds), <span class="mono">action_source</span> is <span class="mono">system_generated</span>, <span class="mono">user_data.lead_id</span> is the Facebook Lead ID, <span class="mono">custom_data.event_source</span> is <span class="mono">crm</span> and <span class="mono">lead_event_source</span> is DripJobs.</li>
-        <li>Meta matches on the Lead ID first, then click ID, then hashed email. It rejects an event with an invalid Lead ID, and may discard one timed before the lead was created or more than 7 days before sending.</li>
+        <li>Meta matches on the Lead ID first, then click ID, then hashed email, so hashed email and phone can ride along as a backup (left out of the demo JSON to keep it short). Meta rejects an event with an invalid Lead ID, and may discard one timed before the lead was created or more than 7 days before sending.</li>
         <li>DripJobs' Create Lead action has no custom-field input, so the Lead ID has to ride somewhere. In this demo the Zap looks it up on the GoHighLevel contact by email. It could also ride in the deal's Notes or name. The audit shows which way your current setup went.</li>
         <li>On your accounts, the proof for each event is the DripJobs card, the Zap run and the event in your CRM dataset in Events Manager, side by side in screenshots, plus Diagnostics (no errors), and Lead Coverage (Meta wants 60% or higher) once Meta's 1 to 2 day data check is done.</li>
       </ul>
@@ -316,19 +316,19 @@
   <div id="prob-stage">
   <div class="fails">
     <article class="fail" id="fa">
-      <div class="fail-head"><h3><span class="letter">A</span>A lead reaches DripJobs without its Facebook Lead ID</h3><span class="pill">Waiting</span></div>
-      <p class="why">Why it's silent: nothing errors. The lead looks normal in DripJobs, but Meta can't match any of its stage events.</p>
+      <div class="fail-head"><h3><span class="letter">A</span>Lead reaches DripJobs without its Facebook Lead ID</h3><span class="pill">Waiting</span></div>
+      <p class="why">Why it's silent: nothing errors. The lead looks normal in DripJobs, but without its Lead ID none of its stage events go to Meta.</p>
       <ol class="frows">
         <li class="frow"><span><span class="who">Meta Lead Ad.</span> Test Lead B submits the form. Lead ID <span class="mono">2345678901234567</span>.</span><span class="pill ok">OK</span></li>
         <li class="frow"><span><span class="who">GoHighLevel.</span> Contact created, but the Facebook Lead ID field is blank.</span><span class="pill bad">Problem</span></li>
         <li class="frow"><span><span class="who">DripJobs.</span> Lead created as usual, LeadSource Facebook, no Lead ID anywhere.</span><span class="pill warn">Looks fine</span></li>
         <li class="frow"><span><span class="who">Lead ID check.</span> Source is Facebook and there's no valid 15 to 17 digit Lead ID. Website, Angi and Thumbtack leads are skipped, since they never go to Meta.</span><span class="pill ok">Caught</span></li>
-        <li class="frow alertrow"><div class="alert"><div class="lbl">Alert email to you</div><div class="subj">Lead missing its Facebook Lead ID: Test Lead B</div><p>Test Lead B came in from Facebook and reached DripJobs at 10:41 AM on Nov 4 without a Facebook Lead ID, so Meta can't match its stage events. Add the Lead ID to the GoHighLevel contact (test.lead.b@example.com), then send its Raw Lead event within Meta's 7-day window.</p></div></li>
+        <li class="frow alertrow"><div class="alert"><div class="lbl">Alert email to you</div><div class="subj">Lead missing its Facebook Lead ID: Test Lead B</div><p>Test Lead B came in from Facebook and reached DripJobs at 10:41 AM on Nov 4 without a Facebook Lead ID, so its stage events aren't going to Meta. Add the Lead ID to the GoHighLevel contact (test.lead.b@example.com), then send its Raw Lead event within Meta's 7-day window.</p></div></li>
       </ol>
     </article>
 
     <article class="fail" id="fb">
-      <div class="fail-head"><h3><span class="letter">B</span>A lookup finds nothing and the Zap safely halts</h3><span class="pill">Waiting</span></div>
+      <div class="fail-head"><h3><span class="letter">B</span>Lookup finds nothing and the Zap safely halts</h3><span class="pill">Waiting</span></div>
       <p class="why">Why it's silent: Zapier doesn't count a halted run as an error, so its error alerts never fire.</p>
       <ol class="frows">
         <li class="frow"><span><span class="who">DripJobs.</span> Test Lead C moves to Estimate Scheduled. Deal Stage Changed fires.</span><span class="pill ok">OK</span></li>
@@ -340,7 +340,7 @@
     </article>
 
     <article class="fail" id="fc">
-      <div class="fail-head"><h3><span class="letter">C</span>A Zap errors over and over and gets turned off</h3><span class="pill">Waiting</span></div>
+      <div class="fail-head"><h3><span class="letter">C</span>Zap errors over and over and gets turned off</h3><span class="pill">Waiting</span></div>
       <p class="why">Why it matters: a Zap that's turned off sends nothing, so every stage change after it misses Meta until it's back on.</p>
       <ol class="frows">
         <li class="frow"><span><span class="who">Zapier.</span> The Send Funnel Event step errors on Test Lead D's Proposal Sent. No event reaches Meta.</span><span class="pill bad">Error</span></li>
