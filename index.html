@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>DripJobs to Meta lead feedback: working demo</title>
+<style>
+  :root {
+    --ink: #1f1b16; --soft: #6a6158; --line: #e4ddd2; --paper: #ffffff; --bg: #f7f3ed;
+    --acc: #b4532a; --acc-dark: #8f3f1e; --acc-soft: #f7e7dd;
+    --ok: #2c7a4b; --ok-soft: #e2f1e7; --warn: #92600a; --warn-soft: #fbefd6; --bad: #ad2c20; --bad-soft: #f9e2df;
+    --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: Consolas, "SFMono-Regular", Menlo, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 18px; }
+  h1, h2, h3 { line-height: 1.2; margin: 0; }
+  p { margin: 0 0 12px; }
+  .mono { font-family: var(--mono); font-size: 0.92em; }
+
+  /* header */
+  .top { background: var(--paper); border-bottom: 1px solid var(--line); padding: 26px 0 22px; }
+  .eyebrow { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--acc-dark); font-weight: 600; margin-bottom: 8px; }
+  h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 14px; }
+  .sample-flag { display: inline-block; margin: 0 0 16px; padding: 7px 12px; border: 1px solid var(--acc); background: var(--acc-soft); color: var(--acc-dark); border-radius: 6px; font-weight: 600; font-size: 14px; }
+  .lede { max-width: 760px; font-size: 17px; }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 6px; font-size: 14px; }
+  .toc a { color: var(--acc-dark); text-decoration: none; border-bottom: 1px solid #e3c3b2; }
+
+  section { padding: 34px 0 10px; }
+  h2 { font-size: 23px; font-weight: 700; display: flex; gap: 12px; align-items: baseline; margin-bottom: 10px; }
+  h2 .no { color: var(--acc); }
+  h3 { font-size: 17px; font-weight: 700; margin: 0 0 10px; }
+  .intro { max-width: 780px; }
+  .note { font-size: 14px; color: var(--soft); }
+
+  /* controls */
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0 18px; }
+  .btn { min-height: 46px; padding: 0 22px; border-radius: 8px; border: 1px solid var(--acc); background: var(--acc); color: #fff; font: 600 16px var(--sans); cursor: pointer; }
+  .btn:hover { background: var(--acc-dark); border-color: var(--acc-dark); }
+  .btn.ghost { background: transparent; color: var(--acc-dark); }
+  .btn.ghost:hover { background: var(--acc-soft); }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .status { font-size: 14px; color: var(--soft); }
+  .status.done { color: var(--ok); font-weight: 600; }
+
+  /* pills */
+  .pill { display: inline-block; font-size: 12px; font-weight: 600; line-height: 1.5; padding: 1px 8px; border-radius: 999px; background: #eee8df; color: var(--soft); white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.acc { background: var(--acc-soft); color: var(--acc-dark); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+  /* chain */
+  .run-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  ol.chain { list-style: none; margin: 0; padding: 0; }
+  .node { position: relative; padding-left: 30px; padding-bottom: 12px; }
+  .node::before { content: ""; position: absolute; left: 8px; top: 22px; bottom: -4px; width: 2px; background: var(--line); }
+  .node:last-child::before { display: none; }
+  .node .dot { position: absolute; left: 1px; top: 15px; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid #cfc5b6; }
+  .node .card { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; transition: border-color .2s, box-shadow .2s; }
+  .node.active .card { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+  .node.active .dot { border-color: var(--acc); background: var(--acc-soft); animation: pulse 1s infinite; }
+  .node.done .dot { border-color: var(--acc); background: var(--acc); }
+  .node.done::before { background: #e5b9a3; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 3px; }
+  .app { font-weight: 700; color: var(--acc-dark); font-size: 15px; }
+  .act { font-size: 14.5px; margin-bottom: 6px; }
+  dl.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; margin: 0; font-size: 14px; }
+  dl.kv dt { color: var(--soft); }
+  dl.kv dd { margin: 0; overflow-wrap: anywhere; }
+  .wait { color: #a59b8e; }
+
+  .chips-label { font-size: 12px; color: var(--soft); text-transform: uppercase; letter-spacing: .05em; margin: 8px 0 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 13px; padding: 3px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; color: #9a9084; display: inline-flex; align-items: center; gap: 6px; transition: background .2s, color .2s; }
+  .chip.been { color: var(--ink); background: #f3eee6; border-color: #d8cebf; }
+  .chip.here { color: #fff; background: var(--acc); border-color: var(--acc); }
+  .chip .sd { display: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+  .chip.sent .sd { display: inline-block; }
+  .chip.here .sd { background: #fff; }
+  .legend { font-size: 12.5px; color: var(--soft); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+  .legend .sd { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+
+  ol.zsteps { list-style: none; margin: 6px 0 4px; padding: 0; counter-reset: z; font-size: 13.5px; }
+  ol.zsteps li { counter-increment: z; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px; padding: 4px 6px; border-radius: 6px; margin-bottom: 2px; transition: background .15s; }
+  ol.zsteps li::before { content: counter(z); font-weight: 700; color: var(--soft); }
+  ol.zsteps li.on { background: var(--acc-soft); }
+  ol.zsteps li.pass { background: var(--ok-soft); }
+  ol.zsteps li.stop { background: var(--warn-soft); }
+  .counts { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; margin-top: 6px; }
+  .counts b { font-size: 16px; }
+
+  /* log */
+  .log-wrap { min-width: 0; }
+  .log-empty { border: 1px dashed #d6ccbd; border-radius: 10px; padding: 18px; color: var(--soft); font-size: 14.5px; background: #fbf9f5; }
+  ol.log { list-style: none; margin: 0; padding: 0; }
+  li.ev { background: var(--paper); border: 1px solid var(--line); border-left: 4px solid #cfc5b6; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; animation: rise .35s ease-out; }
+  li.ev.sent { border-left-color: var(--ok); }
+  li.ev.skip { border-left-color: #d8b56a; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .ev-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  .ev-time { font-family: var(--mono); font-size: 12.5px; color: var(--soft); }
+  .ev-trig { font-weight: 600; font-size: 14.5px; }
+  .ev-body { font-size: 14px; margin-top: 3px; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; font-size: 13.5px; color: var(--acc-dark); font-weight: 600; }
+  pre.json { margin: 6px 0 0; background: #2a241e; color: #f4ede3; border-radius: 8px; padding: 10px 12px; font: 12.5px/1.5 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .recv { margin-top: 8px; font-size: 13.5px; background: var(--ok-soft); color: #1e5a37; border-radius: 6px; padding: 7px 10px; }
+  .recv b { color: var(--ok); }
+
+  /* tables */
+  .tscroll { overflow-x: auto; }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--paper); }
+  table.tbl th { text-align: left; font-size: 12.5px; color: var(--soft); font-weight: 600; padding: 8px 10px; border-bottom: 2px solid var(--acc); vertical-align: bottom; }
+  table.tbl td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.tbl td.strong { font-weight: 600; }
+  .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; margin-top: 18px; }
+  .panel > .tscroll { margin: 0 -6px; }
+
+  /* failures */
+  .fails { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .fail { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 14px 14px 12px; transition: border-color .2s, box-shadow .2s; }
+  .fail.active { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+  .fail.done { border-color: #b9d8c4; }
+  .fail-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+  .fail-head h3 { margin: 0; font-size: 16px; }
+  .fail-head .letter { color: var(--acc); margin-right: 6px; }
+  .why { font-size: 14px; color: var(--soft); margin: 6px 0 8px; }
+  ol.frows { list-style: none; margin: 0; padding: 0; }
+  li.frow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: start; font-size: 14px; padding: 7px 0; border-top: 1px solid var(--line); opacity: 0.5; transition: opacity .3s; }
+  li.frow.shown { opacity: 1; }
+  li.frow .who { font-weight: 600; }
+  li.alertrow { display: block; border-top: 0; padding: 4px 0 6px; }
+  .alert { border: 1px solid #e7b3ab; background: #fdf3f1; border-radius: 8px; padding: 9px 11px; font-size: 13.5px; }
+  li.alertrow.shown .alert { animation: flash .9s ease-out; }
+  @keyframes flash { 0% { box-shadow: 0 0 0 0 rgba(173,44,32,.45); } 100% { box-shadow: 0 0 0 10px rgba(173,44,32,0); } }
+  .alert .lbl { font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--bad); font-weight: 700; }
+  .alert .subj { font-weight: 700; margin: 2px 0 3px; }
+  .alert p { margin: 0; }
+
+  table.recon td.num { font-family: var(--mono); font-size: 15px; font-weight: 700; white-space: nowrap; text-align: right; }
+  table.recon tr.gap td { transition: background .3s; }
+  table.recon.lit tr.gap td { background: var(--bad-soft); }
+  table.recon.lit tr.gap td.num { color: var(--bad); }
+  table.recon.lit tr.match td.num { color: var(--ok); }
+
+  .cant { background: #fff8ea; border: 1px solid #ecd6a6; border-radius: 10px; padding: 14px 16px; margin-top: 18px; }
+  .cant h3 { color: var(--warn); }
+  .cant ul, ul.plain { margin: 0; padding-left: 20px; }
+  .cant li, ul.plain li { margin-bottom: 6px; font-size: 15px; }
+
+  /* report */
+  .report { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 18px 16px; }
+  .rep-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: flex-start; border-bottom: 2px solid var(--acc); padding-bottom: 10px; margin-bottom: 12px; }
+  .rep-top .t { font-size: 19px; font-weight: 700; }
+  .rep-top .s { font-size: 13.5px; color: var(--soft); }
+  .stamp { border: 2px solid var(--acc); color: var(--acc); font-weight: 700; font-size: 13px; letter-spacing: .12em; padding: 2px 10px; border-radius: 4px; }
+  .rep-sum { background: var(--ok-soft); border-radius: 8px; padding: 9px 12px; font-size: 14.5px; margin-bottom: 14px; }
+  .report h3 { font-size: 15px; margin: 18px 0 8px; }
+  .res { font-weight: 600; white-space: nowrap; }
+  .res.p { color: var(--ok); }
+  .res.f { color: var(--bad); white-space: normal; }
+
+  footer { margin-top: 36px; border-top: 1px solid var(--line); background: var(--paper); padding: 18px 0 26px; font-size: 13.5px; color: var(--soft); }
+  footer p { margin: 0 0 6px; }
+
+  @media (max-width: 759px) { .ev-time { flex-basis: 100%; } }
+  @media (min-width: 760px) {
+    .wrap { padding: 0 32px; }
+    h1 { font-size: 38px; }
+    h2 { font-size: 27px; }
+    .fails { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1000px) {
+    .run-grid { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 30px; }
+    .fails { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .two > .panel, .two > .cant { margin-top: 18px; }
+  }
+</style>
+</head>
+<body data-run="idle" data-problems="idle">
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">For The Painting Company, Bellevue NE</div>
+    <h1>DripJobs to Meta lead feedback: working demo</h1>
+    <p class="sample-flag">Demo with sample data. No accounts are connected.</p>
+    <p class="lede">This is a working model of the lead feedback flow I'd finish for you. A Facebook lead goes into GoHighLevel, then DripJobs, and every stage it reaches in DripJobs goes back to Meta, matched to the original lead by its Facebook Lead ID. Press Run to play one lead through it. Then press Run with problems to see the quiet failures I check for and the alerts you'd get.</p>
+    <nav class="toc" aria-label="Sections">
+      <a href="#run">1. One lead, start to finish</a>
+      <a href="#problems">2. Silent failures and alerts</a>
+      <a href="#report">3. Sample monthly test report</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ 1. HAPPY PATH ============ -->
+<section id="run">
+  <h2><span class="no">1</span>One lead, start to finish</h2>
+  <p class="intro">The sample lead is Test Lead, test.lead@example.com, (402) 555-0142. Times are Central. Each step lights up as the lead reaches it, and every event the Zap sends is shown as the exact JSON Meta receives.</p>
+  <div class="controls">
+    <button class="btn" id="btn-run" type="button">Run</button>
+    <button class="btn ghost" id="btn-reset" type="button">Reset</button>
+    <span class="status" id="run-status" aria-live="polite">Ready</span>
+  </div>
+
+  <div class="run-grid" id="run-stage">
+    <ol class="chain">
+      <li class="node" id="n-meta"><span class="dot"></span><div class="card">
+        <div class="card-head"><span class="app">1. Meta Lead Ad</span><span class="pill">Waiting</span></div>
+        <div class="act">Lead form submitted. Meta gives the lead its Lead ID (leadgen_id), 15 to 17 digits.</div>
+        <dl class="kv"><dt>Lead ID</dt><dd class="mono" id="f-leadgen"><span class="wait">not yet</span></dd><dt>Submitted</dt><dd id="f-submitted"><span class="wait">not yet</span></dd></dl>
+      </div></li>
+
+      <li class="node" id="n-ghl"><span class="dot"></span><div class="card">
+        <div class="card-head"><span class="app">2. GoHighLevel</span><span class="pill">Waiting</span></div>
+        <div class="act">Contact created. The Lead ID is saved in the Facebook Lead ID custom field.</div>
+        <dl class="kv"><dt>Contact</dt><dd id="f-contact"><span class="wait">not yet</span></dd><dt>Email</dt><dd id="f-email"><span class="wait">not yet</span></dd><dt>Phone</dt><dd id="f-phone"><span class="wait">not yet</span></dd><dt>Facebook Lead ID</dt><dd class="mono" id="f-ghl-id"><span class="wait">not yet</span></dd></dl>
+      </div></li>
+
+      <li class="node" id="n-dj"><span class="dot"></span><div class="card">
+        <div class="card-head"><span class="app">3. DripJobs lead</span><span class="pill">Waiting</span></div>
+        <div class="act">Zapier's DripJobs "Create Lead" action puts the deal on your sales pipeline.</div>
+        <dl class="kv"><dt>LeadSource</dt><dd id="f-src"><span class="wait">not yet</span></dd><dt>Name, email</dt><dd id="f-name"><span class="wait">not yet</span></dd><dt>DealStage</dt><dd id="f-stage"><span class="wait">not yet</span></dd></dl>
+      </div></li>
+
+      <li class="node" id="n-pipe"><span class="dot"></span><div class="card">
+        <div class="card-head"><span class="app">4. DripJobs pipeline</span><span class="pill">Waiting</span></div>
+        <div class="act">The card moves through your stages. On approval it moves to the jobs pipeline.</div>
+        <div class="chips-label">Sales pipeline</div>
+        <div class="chips">
+          <span class="chip" data-stage="Cold Lead"><span class="sd"></span>Cold Lead</span>
+          <span class="chip" data-stage="Warm Lead"><span class="sd"></span>Warm Lead</span>
+          <span class="chip" data-stage="Estimate Scheduled"><span class="sd"></span>Estimate Scheduled</span>
+          <span class="chip" data-stage="Proposal Sent"><span class="sd"></span>Proposal Sent</span>
+        </div>
+        <div class="chips-label">Jobs pipeline, after approval</div>
+        <div class="chips">
+          <span class="chip" data-stage="Scheduled"><span class="sd"></span>Scheduled</span>
+          <span class="chip" data-stage="Colors Confirmed"><span class="sd"></span>Colors Confirmed</span>
+          <span class="chip" data-stage="In Progress"><span class="sd"></span>In Progress</span>
+          <span class="chip" data-stage="Completed"><span class="sd"></span>Completed</span>
+        </div>
+        <div class="legend"><span class="sd"></span>Green dot: an event for this move went to Meta</div>
+      </div></li>
+
+      <li class="node" id="n-zap"><span class="dot"></span><div class="card">
+        <div class="card-head"><span class="app">5. Zapier to Meta</span><span class="pill">Waiting</span></div>
+        <div class="act">One small Zap per DripJobs trigger (New Lead Created, Deal Stage Changed, Proposal Accepted, Proposal Rejected), each with the same steps:</div>
+        <ol class="zsteps" id="zsteps">
+          <li><span>Trigger fires in DripJobs</span></li>
+          <li><span>Look up the Facebook Lead ID on the GoHighLevel contact, by email</span></li>
+          <li><span>Filter: a valid 15 to 17 digit Lead ID, a stage on the list, and this Lead ID and stage not sent before</span></li>
+          <li><span>Facebook Conversions: Send Funnel Event to your CRM dataset</span></li>
+        </ol>
+        <div class="counts"><span>Sent: <b id="c-sent">0</b></span><span>Stopped by the filter: <b id="c-stop">0</b></span></div>
+      </div></li>
+
+      <li class="node" id="n-recv"><span class="dot"></span><div class="card">
+        <div class="card-head"><span class="app">6. Meta, your CRM dataset</span><span class="pill">Waiting</span></div>
+        <div class="act">Each event arrives with the lead's Lead ID, so Meta ties it to the original ad lead.</div>
+        <div class="counts"><span>Received: <b id="c-recv">0</b></span><span>Lead ID matches the original lead: <b id="c-match">0</b></span></div>
+      </div></li>
+    </ol>
+
+    <div class="log-wrap">
+      <h3>What the Zap did at each move</h3>
+      <div class="log-empty" id="log-empty">Press Run. Each DripJobs move shows up here with what the Zap did, and for every event it sends, the JSON and Meta's match check.</div>
+      <ol class="log" id="log"></ol>
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h3>Which DripJobs moves go to Meta</h3>
+      <div class="tscroll"><table class="tbl">
+        <tr><th>In DripJobs</th><th>Zapier trigger</th><th>Meta event name</th></tr>
+        <tr><td>Lead lands in Cold Lead or Estimate Requested</td><td>New Lead Created</td><td class="strong">Raw Lead</td></tr>
+        <tr><td>Estimate booked</td><td>Deal Stage Changed to Estimate Scheduled</td><td class="strong">Estimate Scheduled</td></tr>
+        <tr><td>Proposal goes out</td><td>Deal Stage Changed to Proposal Sent</td><td class="strong">Proposal Sent</td></tr>
+        <tr><td>Customer accepts, job moves to the jobs pipeline</td><td>Proposal Accepted</td><td class="strong">Job Won</td></tr>
+        <tr><td>Customer rejects, or your team marks it rejected</td><td>Proposal Rejected</td><td class="strong">Lost</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:10px">Every other move (Warm Lead, and the job card's stages) is stopped by the filter. Meta's event name is free-form, so these can match your own stage wording, and a custom stage can get its own row. Meta wants the stage you optimize for to happen within 28 days of the lead.</p>
+    </div>
+    <div class="panel">
+      <h3>How each event is built and matched</h3>
+      <ul class="plain">
+        <li>Fields follow Meta's Conversion Leads payload spec: <span class="mono">event_name</span> is the stage, <span class="mono">event_time</span> is when the card moved (Unix seconds), <span class="mono">action_source</span> is <span class="mono">system_generated</span>, <span class="mono">user_data.lead_id</span> is the Facebook Lead ID, <span class="mono">custom_data.event_source</span> is <span class="mono">crm</span> and <span class="mono">lead_event_source</span> is DripJobs.</li>
+        <li>Meta matches on the Lead ID first, then click ID, then hashed email. It rejects an event with an invalid Lead ID, and may discard one timed before the lead was created or more than 7 days before sending.</li>
+        <li>DripJobs' Create Lead action has no custom-field input, so the Lead ID has to ride somewhere. In this demo the Zap looks it up on the GoHighLevel contact by email. It could also ride in the deal's Notes or name. The audit shows which way your current setup went.</li>
+        <li>On your accounts, the proof for each event is the DripJobs card, the Zap run and the event in your CRM dataset in Events Manager, side by side in screenshots, plus Diagnostics (no errors), and Lead Coverage (Meta wants 60% or higher) once Meta's 1 to 2 day data check is done.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. PROBLEMS ============ -->
+<section id="problems">
+  <h2><span class="no">2</span>Silent failures and alerts</h2>
+  <p class="intro">Zapier flags a run only when a step errors. The failures that hurt are the quiet ones, where nothing errors and an event just never reaches Meta. Run with problems plants three of them in sample leads and shows the check that catches each one, with the alert you'd get. The alert wording is mine.</p>
+  <div class="controls">
+    <button class="btn" id="btn-problems" type="button">Run with problems</button>
+    <span class="status" id="prob-status" aria-live="polite">Ready</span>
+  </div>
+
+  <div id="prob-stage">
+  <div class="fails">
+    <article class="fail" id="fa">
+      <div class="fail-head"><h3><span class="letter">A</span>A lead reaches DripJobs without its Facebook Lead ID</h3><span class="pill">Waiting</span></div>
+      <p class="why">Why it's silent: nothing errors. The lead looks normal in DripJobs, but Meta can't match any of its stage events.</p>
+      <ol class="frows">
+        <li class="frow"><span><span class="who">Meta Lead Ad.</span> Test Lead B submits the form. Lead ID <span class="mono">2345678901234567</span>.</span><span class="pill ok">OK</span></li>
+        <li class="frow"><span><span class="who">GoHighLevel.</span> Contact created, but the Facebook Lead ID field is blank.</span><span class="pill bad">Problem</span></li>
+        <li class="frow"><span><span class="who">DripJobs.</span> Lead created as usual, LeadSource Facebook, no Lead ID anywhere.</span><span class="pill warn">Looks fine</span></li>
+        <li class="frow"><span><span class="who">Lead ID check.</span> Source is Facebook and there's no valid 15 to 17 digit Lead ID. Website, Angi and Thumbtack leads are skipped, since they never go to Meta.</span><span class="pill ok">Caught</span></li>
+        <li class="frow alertrow"><div class="alert"><div class="lbl">Alert email to you</div><div class="subj">Lead missing its Facebook Lead ID: Test Lead B</div><p>Test Lead B came in from Facebook and reached DripJobs at 10:41 AM on Nov 4 without a Facebook Lead ID, so Meta can't match its stage events. Add the Lead ID to the GoHighLevel contact (test.lead.b@example.com), then send its Raw Lead event within Meta's 7-day window.</p></div></li>
+      </ol>
+    </article>
+
+    <article class="fail" id="fb">
+      <div class="fail-head"><h3><span class="letter">B</span>A lookup finds nothing and the Zap safely halts</h3><span class="pill">Waiting</span></div>
+      <p class="why">Why it's silent: Zapier doesn't count a halted run as an error, so its error alerts never fire.</p>
+      <ol class="frows">
+        <li class="frow"><span><span class="who">DripJobs.</span> Test Lead C moves to Estimate Scheduled. Deal Stage Changed fires.</span><span class="pill ok">OK</span></li>
+        <li class="frow"><span><span class="who">Lookup.</span> No GoHighLevel contact has test.lead.c.new@example.com. The email was changed on the DripJobs card.</span><span class="pill bad">Nothing found</span></li>
+        <li class="frow"><span><span class="who">Zapier.</span> The run safely halts. It isn't an error, so no error email. Nothing reaches Meta.</span><span class="pill warn">Silent</span></li>
+        <li class="frow"><span><span class="who">Nothing-found check.</span> A check right after the lookup sends an alert instead of stopping quietly.</span><span class="pill ok">Caught</span></li>
+        <li class="frow alertrow"><div class="alert"><div class="lbl">Alert email to you</div><div class="subj">Stage change not sent to Meta: Test Lead C</div><p>Test Lead C moved to Estimate Scheduled at 2:05 PM on Nov 5, but no GoHighLevel contact matches test.lead.c.new@example.com, so the Zap halted and nothing went to Meta. Fix the email on the card or the contact, then send the event again within Meta's 7-day window.</p></div></li>
+      </ol>
+    </article>
+
+    <article class="fail" id="fc">
+      <div class="fail-head"><h3><span class="letter">C</span>A Zap errors over and over and gets turned off</h3><span class="pill">Waiting</span></div>
+      <p class="why">Why it matters: a Zap that's turned off sends nothing, so every stage change after it misses Meta until it's back on.</p>
+      <ol class="frows">
+        <li class="frow"><span><span class="who">Zapier.</span> The Send Funnel Event step errors on Test Lead D's Proposal Sent. No event reaches Meta.</span><span class="pill bad">Error</span></li>
+        <li class="frow"><span><span class="who">Zapier Manager.</span> Emails on the new Zap error.</span><span class="pill ok">Caught</span></li>
+        <li class="frow alertrow"><div class="alert"><div class="lbl">Alert email to you</div><div class="subj">New Zap error: DripJobs to Meta (Deal Stage Changed)</div><p>Step 4, Facebook Conversions Send Funnel Event, errored on Test Lead D's Proposal Sent at 9:30 AM on Nov 6. No event reached Meta for this run.</p></div></li>
+        <li class="frow"><span><span class="who">If nobody fixes it.</span> When about 95% of a Zap's runs error over 7 days, Zapier turns the Zap off by itself.</span><span class="pill bad">Zap off</span></li>
+        <li class="frow"><span><span class="who">Zapier Manager.</span> Emails when a Zap is turned off.</span><span class="pill ok">Caught</span></li>
+        <li class="frow alertrow"><div class="alert"><div class="lbl">Alert email to you</div><div class="subj">Zap turned off: DripJobs to Meta (Deal Stage Changed)</div><p>Zapier turned this Zap off because about 95% of its runs errored over the last 7 days. No stage changes reach Meta until it's fixed and turned back on.</p></div></li>
+      </ol>
+    </article>
+  </div>
+
+  <div class="panel" id="recon-panel">
+    <div class="fail-head"><h3>Weekly count, Nov 2 to 8 (sample week)</h3><span class="pill" id="recon-pill">Waiting</span></div>
+    <p class="note" style="margin-top:4px">Once a week I compare three numbers: leads Meta collected, leads that reached DripJobs, and events Meta received. A gap means something went missing, even if nothing errored.</p>
+    <div class="tscroll"><table class="tbl recon" id="recon">
+      <tr><th>What's counted</th><th style="text-align:right">Count</th><th>Result</th></tr>
+      <tr><td>Leads Meta collected from your lead form</td><td class="num">12</td><td></td></tr>
+      <tr class="match"><td>Facebook leads that reached DripJobs</td><td class="num">12</td><td>Matches Meta</td></tr>
+      <tr class="gap"><td>Of those, with a valid Facebook Lead ID</td><td class="num">11</td><td><b>1 short:</b> Test Lead B (problem A)</td></tr>
+      <tr><td>Events that should have reached Meta (a Raw Lead per lead, plus each listed stage move)</td><td class="num">27</td><td></td></tr>
+      <tr class="gap"><td>Events Meta received, from your CRM dataset</td><td class="num">24</td><td><b>3 short:</b> Test Lead B's Raw Lead (A), Test Lead C's Estimate Scheduled (B), Test Lead D's Proposal Sent (C)</td></tr>
+    </table></div>
+    <p class="note" style="margin-top:10px;margin-bottom:0">Each gap is named by lead, so it can be fixed and sent again while it's inside Meta's 7-day window. The count also catches what no alert can, like a trigger that never fired.</p>
+  </div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <h3>How each problem gets caught</h3>
+      <div class="tscroll"><table class="tbl">
+        <tr><th>Problem</th><th>Caught by</th><th>When you hear</th></tr>
+        <tr><td>A Zap step errors</td><td>Zapier Manager email on new Zap errors</td><td>When Zapier logs the error</td></tr>
+        <tr><td>Zapier turns a Zap off (about 95% of runs erroring over 7 days)</td><td>Zapier Manager email when a Zap is turned off</td><td>When it's turned off</td></tr>
+        <tr><td>A Facebook lead reaches DripJobs with no Lead ID</td><td>The Lead ID check</td><td>When the lead is created</td></tr>
+        <tr><td>A lookup finds nothing and the Zap safely halts</td><td>The nothing-found check</td><td>At the stage change</td></tr>
+        <tr><td>An event goes missing any other way, like a trigger that never fires</td><td>The weekly count</td><td>Within a week</td></tr>
+        <tr><td>A wrong stage picked by hand in DripJobs</td><td>Nothing</td><td>Not caught (see right)</td></tr>
+      </table></div>
+    </div>
+    <div class="cant" id="cant">
+      <h3>What this can't catch</h3>
+      <ul>
+        <li><b>A wrong stage picked by hand in DripJobs.</b> If someone moves a card to the wrong stage, the event goes out looking correct, so no check can tell. Your team's stage moves are the source of truth.</li>
+        <li><b>Meta's own reports lag about 1 to 2 days.</b> Meta runs a data check first, so its reports, like Lead Coverage, confirm a day or two after an event is sent.</li>
+        <li><b>Zapier only flags errors.</b> A run that safely halts, a run a filter stopped and a trigger that never fires all look quiet in Zapier. That's why the Lead ID check, the nothing-found check and the weekly count exist.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. REPORT ============ -->
+<section id="report">
+  <h2><span class="no">3</span>Sample monthly test report</h2>
+  <p class="intro">What you'd get each month of support: two full tests, the alerts that fired and what needs your call. Short enough to read in two minutes.</p>
+
+  <article class="report">
+    <div class="rep-top">
+      <div><div class="t">Monthly test report: January 2027</div><div class="s">The Painting Company, DripJobs to Meta lead feedback. Prepared by Chris Hren.</div></div>
+      <span class="stamp">SAMPLE</span>
+    </div>
+    <div class="rep-sum"><b>Status: working.</b> 23 of 24 checks passed on the first try. The one failure was fixed the same day and passed on retest. Outside the planted tests, 2 alerts fired, both resolved.</div>
+
+    <h3>What was tested</h3>
+    <ul class="plain">
+      <li>Two full tests (Jan 12 and Jan 26), each with two test leads through the lead form: one taken to Job Won, one to Lost.</li>
+      <li>Every step: GoHighLevel, DripJobs, each mapped stage, and each event in your CRM dataset in Events Manager (Overview, the event's Lead ID and source values, Diagnostics).</li>
+      <li>The planted problems from section 2, to prove the alerts still fire.</li>
+    </ul>
+
+    <h3>Results</h3>
+    <div class="tscroll"><table class="tbl">
+      <tr><th>Check</th><th style="white-space:nowrap">Jan 12</th><th style="white-space:nowrap">Jan 26</th></tr>
+      <tr><td>Lead form to GoHighLevel, Facebook Lead ID saved</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>GoHighLevel to DripJobs, deal in Cold Lead, source Facebook</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Raw Lead received by Meta, Lead ID matches</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Estimate Scheduled received</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Proposal Sent received</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Job Won received (Proposal Accepted)</td><td class="res p">Pass</td><td class="res f">Fail, fixed same day, retest Pass</td></tr>
+      <tr><td>Lost received (Proposal Rejected)</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Card dragged back and forward: no duplicate event</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Planted lead with no Lead ID: alert fired</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Planted lookup that finds nothing: alert fired</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Zapier Manager error and turned-off alerts are on</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Events Manager Diagnostics: no errors</td><td class="res p">Pass</td><td class="res p">Pass</td></tr>
+      <tr><td>Lead Coverage (Meta wants 60% or higher)</td><td class="res p">68%</td><td class="res p">71%</td></tr>
+    </table></div>
+
+    <h3>Alerts that fired</h3>
+    <div class="tscroll"><table class="tbl">
+      <tr><th>Date</th><th>Alert</th><th>Cause and fix</th></tr>
+      <tr><td>Jan 8</td><td>Lead missing its Facebook Lead ID</td><td>A Facebook lead was added to GoHighLevel by hand, without its Lead ID. Lead ID added, Raw Lead sent inside Meta's 7-day window.</td></tr>
+      <tr><td>Jan 26</td><td>New Zap error: DripJobs to Meta (Proposal Accepted)</td><td>The Send Funnel Event step errored during test 2. Fixed the step, re-ran the test, and Meta received Job Won.</td></tr>
+    </table></div>
+    <p class="note" style="margin-top:8px">Weekly counts: week 1 had one gap (the Jan 8 lead above, fixed). Weeks 2 to 4 had no gaps.</p>
+
+    <h3>Follow-ups</h3>
+    <ul class="plain">
+      <li><b>Your call:</b> your team added a custom stage, Color Consult. It isn't sent to Meta yet. Do you want it as its own event?</li>
+      <li>Lead Coverage is above Meta's 60% bar at 71%.</li>
+      <li>Next tests: Feb 9 and Feb 23.</li>
+    </ul>
+  </article>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built by Chris Hren as a demo for The Painting Company.</p>
+    <p>All leads, IDs and numbers on this page are sample data. Product facts come from Zapier's DripJobs and Facebook Conversions app pages, Zapier's help pages, Meta's Conversion Leads payload specification and CRM integration guides, and DripJobs' pipeline page.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s, root) { return Array.prototype.slice.call((root || document).querySelectorAll(s)); };
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var STEP = 750;
+  var TZ = "America/Chicago";
+  function fmt(d) { return d.toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+  function unix(d) { return Math.floor(d.getTime() / 1000); }
+
+  var LEAD = { id: "1234567890123456", first: "Test", last: "Lead", email: "test.lead@example.com", phone: "(402) 555-0142" };
+  var LEAD_TIME = new Date("2026-11-02T09:14:00-06:00");
+  var SEND_DELAY = 5; // seconds between the card moving and the Zap sending, sample value
+
+  var MOVES = [
+    { t: "2026-11-02T09:15:00-06:00", trig: "New Lead Created", stage: "Cold Lead", send: "Raw Lead", body: "The new lead lands in Cold Lead." },
+    { t: "2026-11-02T11:40:00-06:00", trig: "Deal Stage Changed", stage: "Warm Lead", stop: "Warm Lead isn't on the list, so the filter stops it. Nothing sent." },
+    { t: "2026-11-03T08:52:00-06:00", trig: "Deal Stage Changed", stage: "Estimate Scheduled", send: "Estimate Scheduled", body: "Estimate booked." },
+    { t: "2026-11-04T16:20:00-06:00", trig: "Deal Stage Changed", stage: "Proposal Sent", send: "Proposal Sent", body: "Proposal goes out." },
+    { t: "2026-11-04T16:22:00-06:00", trig: "Deal Stage Changed", stage: "Estimate Scheduled", stop: "Card dragged back by hand. Estimate Scheduled was already sent for this lead, so the filter skips it." },
+    { t: "2026-11-04T16:23:00-06:00", trig: "Deal Stage Changed", stage: "Proposal Sent", stop: "Dragged forward again. Proposal Sent was already sent for this lead, so it can't count twice." },
+    { t: "2026-11-06T10:05:00-06:00", trig: "Proposal Accepted", stage: "Scheduled", label: "Proposal Accepted: job card to Scheduled", send: "Job Won", body: "Customer accepts. The job card moves to the jobs pipeline, in Scheduled." },
+    { t: "2026-11-09T13:30:00-06:00", trig: "Deal Stage Changed", stage: "Colors Confirmed", stop: "A job card stage, not on the list. Nothing sent." },
+    { t: "2026-11-11T07:45:00-06:00", trig: "Deal Stage Changed", stage: "In Progress", stop: "A job card stage, not on the list. Nothing sent." },
+    { t: "2026-11-13T15:10:00-06:00", trig: "Deal Stage Changed", stage: "Completed", stop: "A job card stage, not on the list. Nothing sent." }
+  ];
+
+  var runStage = $("#run-stage"), runSnap = runStage.innerHTML;
+  var probStage = $("#prob-stage"), probSnap = probStage.innerHTML;
+  var btnRun = $("#btn-run"), btnReset = $("#btn-reset"), btnProb = $("#btn-problems");
+  var busy = false;
+
+  function setBusy(b) { busy = b; btnRun.disabled = b; btnReset.disabled = b; btnProb.disabled = b; }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function setNode(id, state) {
+    var n = document.getElementById(id);
+    n.classList.remove("active", "done");
+    n.classList.add(state);
+    var p = n.querySelector(".pill");
+    p.className = "pill " + (state === "done" ? "ok" : "acc");
+    p.textContent = state === "done" ? "Done" : "Working";
+  }
+  function fill(id, text) { document.getElementById(id).textContent = text; }
+
+  function setStage(name) {
+    $$("#n-pipe .chip").forEach(function (c) { if (c.classList.contains("here")) { c.classList.remove("here"); c.classList.add("been"); } });
+    var chip = $('#n-pipe .chip[data-stage="' + name + '"]');
+    chip.classList.remove("been"); chip.classList.add("here");
+    return chip;
+  }
+
+  async function zapFlash(outcome) {
+    var steps = $$("#zsteps li");
+    steps.forEach(function (s) { s.className = ""; });
+    for (var i = 0; i < steps.length; i++) {
+      if (outcome === "stop" && i === 3) break;
+      steps[i].className = "on";
+      await sleep(130);
+      steps[i].className = (outcome === "stop" && i === 2) ? "stop" : "pass";
+    }
+  }
+
+  function payload(eventName, t, leadId) {
+    return JSON.stringify({ data: [{
+      event_name: eventName,
+      event_time: unix(t),
+      action_source: "system_generated",
+      user_data: { lead_id: Number(leadId) },
+      custom_data: { event_source: "crm", lead_event_source: "DripJobs" }
+    }] }, null, 2);
+  }
+
+  var sentCount, stopCount, recvCount, matchCount, eventNo;
+
+  function addLog(m, t) {
+    $("#log-empty").style.display = "none";
+    var li = el("li", "ev " + (m.send ? "sent" : "skip"));
+    var head = el("div", "ev-head");
+    head.appendChild(el("span", "ev-time", fmt(t)));
+    head.appendChild(el("span", "ev-trig", m.label || (m.trig + ": " + m.stage)));
+    var tag = el("span", "pill " + (m.send ? "ok" : "warn"), m.send ? "Sent to Meta as " + m.send : "Not sent");
+    head.appendChild(tag);
+    li.appendChild(head);
+    li.appendChild(el("div", "ev-body", m.send ? m.body + " The lookup finds Lead ID " + LEAD.id + ", the filter passes, and Send Funnel Event goes out." : m.stop));
+
+    if (m.send) {
+      var json = payload(m.send, t, LEAD.id);
+      var det = el("details"); if (eventNo === 0) det.open = true;
+      det.appendChild(el("summary", null, "Event JSON sent to Meta"));
+      var pre = el("pre", "json", json); det.appendChild(pre);
+      li.appendChild(det);
+
+      var e = JSON.parse(json).data[0];
+      var lid = String(e.user_data.lead_id);
+      var idOk = lid === LEAD.id;
+      var digitsOk = /^\d{15,17}$/.test(lid);
+      var sentAt = unix(t) + SEND_DELAY;
+      var timeOk = e.event_time >= unix(LEAD_TIME) && (sentAt - e.event_time) <= 7 * 86400;
+      var specOk = e.action_source === "system_generated" && e.custom_data.event_source === "crm" && e.custom_data.lead_event_source === "DripJobs";
+      var allOk = idOk && digitsOk && timeOk && specOk;
+      var msg = "lead_id " + lid + (idOk ? " matches the original lead. " : " does NOT match the original lead. ") +
+        lid.length + " digits. event_time is " + (timeOk ? "after the lead was created and within 7 days of sending." : "outside Meta's window.");
+      if (m.send === "Job Won") {
+        var days = Math.floor((t - LEAD_TIME) / 86400000);
+        msg += " Job Won came " + days + " days after the lead, inside Meta's 28-day window.";
+      }
+      var r = el("div", "recv");
+      var b = el("b", null, allOk ? "Meta received (simulated). " : "Check failed. ");
+      r.appendChild(b); r.appendChild(document.createTextNode(msg));
+      li.appendChild(r);
+      li.setAttribute("data-event", m.send);
+      li.setAttribute("data-lead-id", lid);
+      li.setAttribute("data-match", String(allOk));
+      eventNo++;
+      if (allOk) { recvCount++; matchCount++; }
+    }
+    $("#log").appendChild(li);
+  }
+
+  async function run() {
+    if (busy) return;
+    setBusy(true);
+    runStage.innerHTML = runSnap;
+    sentCount = stopCount = recvCount = matchCount = eventNo = 0;
+    document.body.setAttribute("data-run", "running");
+    var st = $("#run-status"); st.className = "status"; st.textContent = "Running...";
+
+    setNode("n-meta", "active"); await sleep(STEP);
+    fill("f-leadgen", LEAD.id); fill("f-submitted", fmt(LEAD_TIME));
+    await sleep(STEP); setNode("n-meta", "done");
+
+    setNode("n-ghl", "active"); await sleep(STEP);
+    fill("f-contact", LEAD.first + " " + LEAD.last); fill("f-email", LEAD.email); fill("f-phone", LEAD.phone);
+    fill("f-ghl-id", LEAD.id + " (16 digits, valid)");
+    await sleep(STEP); setNode("n-ghl", "done");
+
+    setNode("n-dj", "active"); await sleep(STEP);
+    fill("f-src", "Facebook"); fill("f-name", LEAD.first + " " + LEAD.last + ", " + LEAD.email); fill("f-stage", "Cold Lead");
+    await sleep(STEP); setNode("n-dj", "done");
+
+    setNode("n-pipe", "active"); setNode("n-zap", "active");
+    for (var i = 0; i < MOVES.length; i++) {
+      var m = MOVES[i], t = new Date(m.t);
+      var chip = setStage(m.stage);
+      st.textContent = "Running: " + m.trig + ", " + m.stage;
+      await zapFlash(m.send ? "send" : "stop");
+      if (m.send) { sentCount++; chip.classList.add("sent"); setNode("n-recv", "active"); } else { stopCount++; }
+      fill("c-sent", String(sentCount)); fill("c-stop", String(stopCount));
+      addLog(m, t);
+      fill("c-recv", String(recvCount)); fill("c-match", String(matchCount) + " of " + String(recvCount));
+      await sleep(STEP);
+    }
+    setNode("n-pipe", "done"); setNode("n-zap", "done"); setNode("n-recv", "done");
+    $$("#zsteps li").forEach(function (s) { s.className = ""; });
+    st.className = "status done";
+    st.textContent = "Done: " + sentCount + " events sent, " + matchCount + " of " + recvCount + " matched to Lead ID " + LEAD.id + ", " + stopCount + " moves stopped by the filter.";
+    document.body.setAttribute("data-run", "done");
+    setBusy(false);
+  }
+
+  async function runProblems() {
+    if (busy) return;
+    setBusy(true);
+    probStage.innerHTML = probSnap;
+    document.body.setAttribute("data-problems", "running");
+    var st = $("#prob-status"); st.className = "status"; st.textContent = "Running...";
+    var ids = ["fa", "fb", "fc"];
+    for (var k = 0; k < ids.length; k++) {
+      var card = document.getElementById(ids[k]);
+      var pill = card.querySelector(".fail-head .pill");
+      card.classList.add("active"); pill.className = "pill acc"; pill.textContent = "Running";
+      card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      st.textContent = "Running: problem " + "ABC".charAt(k);
+      var rows = $$(".frow", card);
+      for (var j = 0; j < rows.length; j++) { await sleep(STEP); rows[j].classList.add("shown"); }
+      await sleep(STEP / 2);
+      card.classList.remove("active"); card.classList.add("done");
+      pill.className = "pill ok"; pill.textContent = "Caught";
+    }
+    await sleep(STEP);
+    var recon = $("#recon"); recon.classList.add("lit");
+    var rp = $("#recon-pill"); rp.className = "pill bad"; rp.textContent = "2 gaps found";
+    st.className = "status done";
+    st.textContent = "Done: all three problems caught, alerts sent, and the weekly count shows the gaps.";
+    document.body.setAttribute("data-problems", "done");
+    setBusy(false);
+  }
+
+  btnRun.addEventListener("click", run);
+  btnProb.addEventListener("click", runProblems);
+  btnReset.addEventListener("click", function () {
+    if (busy) return;
+    runStage.innerHTML = runSnap;
+    var st = $("#run-status"); st.className = "status"; st.textContent = "Ready";
+    document.body.setAttribute("data-run", "idle");
+  });
+})();
+</script>
+</body>
+</html>
